@@ -3,32 +3,35 @@
 # written by Sébastien Boisvert
 # Université Laval
 # 2011-05-10
+# updated on 2011-06-30
 
 import os
 import sys
 import datetime
 
+# paths that depend on the installation of Sun Grid Engine
+sge_share_mon="/usr/local/ge6.2u5/utilbin/lx24-amd64/sge_share_mon"
+pathToAccountingFile="/mnt/redlotus/usr/local/ge6.2u5/default/common"
+currentYear=2011
+
+# the rest should work as is
 if len(sys.argv)!=2:
 	print "You must provide a resource allocation project identifier (RAP Id)."
 	print ""
-	os.system("/clumeq/bin/colosse-info|grep ID")
 	sys.exit()
 
 years={}
 
-os.system("/usr/local/ge6.2u5/utilbin/lx24-amd64/sge_share_mon -c 1|grep nne-790-ab|awk '{print $5}' > tmp")
+projectIdentifier=sys.argv[1]
 
+os.system(sge_share_mon+" -c 1|grep "+projectIdentifier+"|awk '{print $5}' > tmp")
 coreYears=int(open("tmp").read())
 
-first=datetime.datetime(2011,1,1)
+first=datetime.datetime(currentYear,1,1)
 now=datetime.datetime.now()
 diff=now-first
 yearHours=diff.days*24+diff.seconds/60/60
 allowedCoreHours=coreYears*yearHours
-
-projectIdentifier=sys.argv[1]
-
-pathToAccountingFile="/mnt/redlotus/usr/local/ge6.2u5/default/common"
 
 cache=os.getenv("HOME")+"/Accounting" 
 os.system("mkdir -p "+cache)
@@ -144,7 +147,7 @@ print "Consumption per year"
 for i in years.items():
 	year=i[0]
 	coreHours=i[1]/60
-	if year==2011:
+	if year==currentYear:
 		print "YEAR_ENTRY\t"+str(year)+"\t"+str(coreHours)+" ("+str(coreHours/(0.0+allowedCoreHours)*100)+"%, allowed: "+str(allowedCoreHours)+" core-hours, predictedAllocation: "+str(coreHours/yearHours)+" core-years)"
 	else:
 		print "YEAR_ENTRY\t"+str(year)+"\t"+str(coreHours)

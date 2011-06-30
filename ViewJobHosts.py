@@ -3,6 +3,7 @@
 # written by Sébastien Boisvert
 # Université Laval
 # 2010-11-02
+# updated on 2011-06-30
 
 import sys
 import os
@@ -17,6 +18,7 @@ jobId=sys.argv[1]
 import os
 from xml.dom.minidom import parse, parseString
 
+# qhost should be available
 os.system("qhost -j -xml>dump.xml")
 
 dom=parse("dump.xml")
