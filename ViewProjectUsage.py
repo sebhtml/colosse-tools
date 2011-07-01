@@ -24,46 +24,43 @@ years={}
 
 projectIdentifier=sys.argv[1]
 
+# get the target in core-years using sge_share_mon
 os.system(sge_share_mon+" -c 1|grep "+projectIdentifier+"|awk '{print $5}' > tmp")
 coreYears=int(open("tmp").read())
 
+# compute the allowed core-hours
 first=datetime.datetime(currentYear,1,1)
 now=datetime.datetime.now()
 diff=now-first
 yearHours=diff.days*24+diff.seconds/60/60
 allowedCoreHours=coreYears*yearHours
 
+# update the cache
 cache=os.getenv("HOME")+"/Accounting" 
 os.system("mkdir -p "+cache)
 
 cacheFiles={}
 
 for i in os.listdir(cache):
-	#print "Caching "+i
 	cacheFiles[i]=1
 
-#print "Accounting directory is "+pathToAccountingFile
-#print "Cache directory is "+cache
-#print "Syncing accounting files to the cache"
 for file in os.listdir(pathToAccountingFile):
 	if len(file)<5:
 		continue
 	extension=file[len(file)-4:len(file)]
 	if extension==".bz2":
-		#print "Checking "+file
 		base=file[0:len(file)-4]
 		if base not in cacheFiles:
-			#print "Not cached"
 			cacheFiles[base]=1
 			os.system("cp "+pathToAccountingFile+"/"+file+" "+cache)
 			os.system("bunzip2 "+cache+"/"+file)
-			#print "Created "+cache+"/"+base
 
 os.system("cp "+pathToAccountingFile+"/accounting "+cache)
 
 print ""
 print "Compute Canada Resource Allocation Project Identifier: "+projectIdentifier
-
+print "Target: "+str(coreYears)+" core-years"
+print ""
 output="tmp"
 print ""
 command="cat "+cache+"/accounting*|grep "+projectIdentifier+"|sed 's/:/ /g'|awk '{print $10 \" \" $0}'|sort -n > "+output
@@ -73,6 +70,8 @@ os.system(command)
 sumOfCoreMinutes=0
 
 submissions={}
+
+# list the jobs
 
 print "Submitted\tStarted\tEnded\tJobIdentifier\tJobName\tUser\tWaitingHours\tCores\tMinutes\tCore-minutes"
 
@@ -106,6 +105,7 @@ for line in open(output):
 	jobName=tokens[5]
 	year=int(date.split("-")[0])
 
+	# remove jobs before 2009 (bug in SGE ?)
 	if year<2009:
 		continue
 
@@ -123,9 +123,6 @@ for line in open(output):
 		firstDate=date
 	lastDate=date
 
-	#print tokens
-	#print ""
-
 	seconds=end-start
 	minutes=seconds/60
 	computeCores=int(tokens[35])
@@ -134,6 +131,12 @@ for line in open(output):
 	sumOfCoreMinutes+=coreMinutes
 	
 	print str(submittedDate)+"\t"+date+"\t"+endDate+"\t"+str(job)+"\t"+jobName+"\t"+user+"\t"+waitingTime+"\t"+str(computeCores)+"\t"+" "+str(minutes)+"\t"+str(coreMinutes)
+
+# print summary
+
+print ""
+print "Compute Canada Resource Allocation Project Identifier: "+projectIdentifier
+print "Target: "+str(coreYears)+" core-years"
 
 print ""
 
