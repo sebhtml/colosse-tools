@@ -1,0 +1,33 @@
+#!/usr/bin/python
+
+import os
+
+os.system("qstat -u '*' &> qstat.out")
+
+running=0
+
+for line in open("qstat.out"):
+	tokens=line.split()
+	if len(tokens)<5:
+		continue
+	flags=tokens[4]
+	if flags.find("r")>=0:
+		cores=int(tokens[8])
+		running+=cores
+
+os.system("qhost > qhost.out")
+
+count=0
+i=0
+dead=0
+for line in open("qhost.out"):
+	if i>=3:
+		token=line.split()[2]
+		if token=="-":
+			dead+=1
+		else:
+			count+=int(token)
+	i+=1
+
+print "Processing cores utilised: "+str(running)+"/"+str(count)+" processing cores, dead hosts: "+str(dead)
+
