@@ -8,6 +8,7 @@
 import os
 import sys
 import datetime
+import calendar
 
 # paths that depend on the installation of Sun Grid Engine
 sge_share_mon="/usr/local/ge6.2u5/utilbin/lx24-amd64/sge_share_mon"
@@ -22,11 +23,16 @@ if len(sys.argv)!=2:
 
 years={}
 
+months={}
+
 projectIdentifier=sys.argv[1]
 
 # get the target in core-years using sge_share_mon
 os.system(sge_share_mon+" -c 1|grep "+projectIdentifier+"|awk '{print $5}' > tmp")
-coreYears=int(open("tmp").read())
+data=open("tmp").read()
+coreYears=10
+if len(data)>0:
+	coreYears=int(data)
 
 # compute the allowed core-hours
 first=datetime.datetime(currentYear,1,1)
@@ -61,10 +67,11 @@ print ""
 print "Compute Canada Resource Allocation Project Identifier: "+projectIdentifier
 print "Target: "+str(coreYears)+" core-years"
 print ""
-output="tmp"
+output="accounting.tmp"
 print ""
 command="cat "+cache+"/accounting*|grep "+projectIdentifier+"|sed 's/:/ /g'|awk '{print $10 \" \" $0}'|sort -n > "+output
 
+#print command
 os.system(command)
 
 sumOfCoreMinutes=0
@@ -104,6 +111,7 @@ for line in open(output):
 	user=tokens[4]
 	jobName=tokens[5]
 	year=int(date.split("-")[0])
+	month=int(date.split("-")[1])
 
 	# remove jobs before 2009 (bug in SGE ?)
 	if year<2009:
@@ -128,6 +136,12 @@ for line in open(output):
 	computeCores=int(tokens[35])
 	coreMinutes=minutes*computeCores
 	years[year]+=coreMinutes
+	monthKey=year*100+month
+
+	if monthKey not in months:
+		months[monthKey]=0
+	months[monthKey]+=coreMinutes
+
 	sumOfCoreMinutes+=coreMinutes
 	
 	print str(submittedDate)+"\t"+date+"\t"+endDate+"\t"+str(job)+"\t"+jobName+"\t"+user+"\t"+waitingTime+"\t"+str(computeCores)+"\t"+" "+str(minutes)+"\t"+str(coreMinutes)
@@ -160,4 +174,19 @@ coreHours=sumOfCoreMinutes/60
 print "Core-hours consumed: "+str(coreHours)
 coreDays=coreHours/24
 
+print ""
+print "Core-hours per month"
+print "Month\tcore-hours\testimated core-years"
+print ""
+for i in months.items():
+	key=i[0]
+	coreMinutes=i[1]
+	coreHours=coreMinutes/60
+	year=key/100
+	month=key%100
+	daysInMonth=calendar.monthrange(year,month)[1]
+	coreHoursFor1CoreYear=daysInMonth*24
+	predictedCoreYears=coreHours/coreHoursFor1CoreYear
+	#print str(year)+" "+str(month)+" "+str(daysInMonth)
+	print str(year)+"-"+str(month)+"\t"+str(coreHours)+"\t"+str(predictedCoreYears)
 
