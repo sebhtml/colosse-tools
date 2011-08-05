@@ -185,7 +185,12 @@ for i in months.items():
 	year=key/100
 	month=key%100
 	daysInMonth=calendar.monthrange(year,month)[1]
+
 	coreHoursFor1CoreYear=daysInMonth*24
+
+	if year == now.year and month == now.month:
+		coreHoursFor1CoreYear = (now.day - 1)*24 + now.hour 	
+
 	predictedCoreYears=coreHours/coreHoursFor1CoreYear
 	#print str(year)+" "+str(month)+" "+str(daysInMonth)
 	print str(year)+"-"+str(month)+"\t"+str(coreHours)+"\t"+str(predictedCoreYears)
