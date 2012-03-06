@@ -9,7 +9,7 @@ import os
 from xml.dom.minidom import parse, parseString
 
 # qhost should be available
-#os.system("qhost -j -xml > dump.xml")
+os.system("qhost -j -xml > dump.xml")
 
 dom=parse("dump.xml")
 
