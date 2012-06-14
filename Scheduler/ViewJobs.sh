@@ -6,7 +6,7 @@ echo "Identifier	Name	User	Tasks	State"
 
 showq  -w acct=$project > dump
 
-for state in Running Idle Starting Deferred BatchHold
+for state in Running Idle Starting Deferred BatchHold Canceling
 do
 	for i in $(cat dump|grep $state|awk '{print $1}')
 	do
