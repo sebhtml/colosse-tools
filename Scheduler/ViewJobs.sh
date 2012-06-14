@@ -1,13 +1,21 @@
 #!/bin/bash
 
-echo "Identifier	Name	User	Tasks"
+project=nne-790-ab
 
-for i in $(showq  -w acct=nne-790-ab|grep Running|awk '{print $1}')
+echo "Identifier	Name	User	Tasks	State"
+
+showq  -w acct=$project > dump
+
+for state in Running Idle Starting Deferred BatchHold
 do
-	name=$(checkjob $i|grep Name|awk '{print $2}')
-	slots=$(checkjob $i|grep "Total Requested Ta"|awk '{print $4}')
-	user=$(checkjob $i|grep "Creds"|awk '{print $2}'|sed 's/user://g')
+	for i in $(cat dump|grep $state|awk '{print $1}')
+	do
+		name=$(checkjob $i|grep Name|awk '{print $2}')
+		slots=$(checkjob $i|grep "Total Requested Ta"|awk '{print $4}')
+		user=$(checkjob $i|grep "Creds"|awk '{print $2}'|sed 's/user://g')
 
-	echo "$i	$name	$user	$slots"
-
+		echo "$i	$name	$user	$slots	$state"
+	done
 done
+
+
