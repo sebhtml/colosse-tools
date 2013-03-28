@@ -122,4 +122,4 @@ sed -i "$expression" $moduleFile
 chgrp clumeq -R $prefix
 chmod g+w -R $prefix
 chgrp clumeq -R $moduleFile
-
+chmod g+w $moduleFile
