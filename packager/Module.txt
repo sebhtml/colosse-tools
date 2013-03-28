@@ -1,15 +1,15 @@
 #%Module1.0
 
 proc ModulesHelp { } {
-	    puts stderr "\tAdds PACKAGE_NAME/PACKAGE_VERSION to your environment  "
+	    puts stderr "\tAdds __Name__ __Version__-__Release__ to your environment  "
 }
 
-module-whatis "(Category_______) CATEGORY "
-module-whatis "(Name___________) "
-module-whatis "(Version________) "
+module-whatis "(Category_______) __Group__"
+module-whatis "(Name___________) __Name__"
+module-whatis "(Version________) __Version__-__Release__"
 module-whatis "(Description_Fr_) "
-module-whatis "(Description_En_) "
-module-whatis "(Website________) "
+module-whatis "(Description_En_) __Summary__"
+module-whatis "(Website________) __URL__"
 module-whatis "(Authorship_____) "
 module-whatis "(Compiler_______)"
 module-whatis "(Flags__________)"
@@ -17,9 +17,9 @@ module-whatis "(Dependencies___)"
 module-whatis "(Notes_Fr_______)"
 module-whatis "(Notes_En_______)"
 
-REQUIRES
+__Requires__
 
-set                synopsys          /software/CATEGORY/PACKAGE_NAME/PACKAGE_VERSION
+set                synopsys          /software/__Group__/__Name__/__Version__-__Release__
 prepend-path       LD_LIBRARY_PATH   $synopsys/lib
 prepend-path       C_INCLUDE_PATH    $synopsys/include
 prepend-path       PATH              $synopsys/bin

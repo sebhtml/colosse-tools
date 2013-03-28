@@ -13,26 +13,17 @@ then
 fi
 
 
-
-###################
-
-version=$Version
-package=$Name
-build=$Release
-category=$Group
-tarball=$Source0
-
 # Download the tarball
-distribution=$(basename $tarball)
+distribution=$(basename $Source0)
 
-mock=$package-$version-$build-Sandbox
+mock=$Name-$Version-$Release-Sandbox
 
 if test -f $distribution
 then
 	echo "" &> /dev/null
 else
-	echo "[Packager] Downloading $tarball"
-	wget $tarball -O $distribution
+	echo "[Packager] Downloading $Source0"
+	wget $Source0 -O $distribution
 fi
 
 rm -rf $mock
@@ -60,10 +51,7 @@ do
 	patch -p1 < ../../$i
 done
 
-packageName=$package
-packageVersion=$version-$build
-
-prefix=/software/$category/$packageName/$packageVersion
+prefix=/software/$Group/$Name/$Version-$Release
 
 # Configure the source
 echo "prefix= $prefix"
@@ -109,19 +97,25 @@ then
 fi
 
 # Create the module file
-mkdir -p ~/modulefiles/$category/$packageName
+mkdir -p ~/modulefiles/$Group/$Name
 
-moduleFile=~/modulefiles/$category/$packageName/$packageVersion
+moduleFile=~/modulefiles/$Group/$Name/$Version-$Release
 
 cp $template $moduleFile
 
-expression="s%REQUIRES%module load $Requires%g"
+expression="s%__Requires__%module load $Requires%g"
 sed -i "$expression" $moduleFile
-expression="s/CATEGORY/$category/g"
+expression="s/__Group__/$Group/g"
 sed -i "$expression" $moduleFile
-expression="s/PACKAGE_NAME/$packageName/g"
+expression="s/__Name__/$Name/g"
 sed -i "$expression" $moduleFile
-expression="s/PACKAGE_VERSION/$packageVersion/g"
+expression="s/__Version__/$Version/g"
+sed -i "$expression" $moduleFile
+expression="s/__Release__/$Release/g"
+sed -i "$expression" $moduleFile
+expression="s/__Summary__/$Summary/g"
+sed -i "$expression" $moduleFile
+expression="s%__URL__%$URL%g"
 sed -i "$expression" $moduleFile
 
 # Fix permissions
