@@ -115,7 +115,7 @@ moduleFile=~/modulefiles/$category/$packageName/$packageVersion
 
 cp $template $moduleFile
 
-expression="s/REQUIRES/$Requires/g"
+expression="s%REQUIRES%module load $Requires%g"
 sed -i "$expression" $moduleFile
 expression="s/CATEGORY/$category/g"
 sed -i "$expression" $moduleFile
