@@ -7,7 +7,7 @@ source $1
 ###################
 
 # Download the tarball
-distribution=$package-$version.tar.bz2
+distribution=$(basename $tarball)
 
 if test -f $distribution
 then
@@ -44,7 +44,17 @@ then
 fi
 
 # Make it
-make -j 4
+if test -f Makefile
+then
+	make -j 4
+elif test -f CMakeLists.txt
+then
+	mkdir self-build
+	cd self-build
+	cmake ..
+	make -j 4
+	cd ..
+fi
 
 # Install it
 if test -f configure
@@ -55,11 +65,12 @@ else
 	mkdir $prefix/{bin,lib,share}
 	mkdir -p $prefix/share/man/man1
 
-	for i in $(find .)
+	for i in $(find . | grep -v self-build)
 	do
 		if test -x $i
 		then
-			cp $i $prefix/bin
+			cp -P $i $prefix/bin
+			rm -f $prefix/bin/lib*.so*
 		elif test $(echo $i|grep .1$|wc -l) -eq 1
 		then
 			cat $i | gzip -9 > $prefix/share/man/man1/$i.gz
