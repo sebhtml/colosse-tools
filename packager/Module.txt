@@ -21,6 +21,7 @@ REQUIRES
 
 set                synopsys          /software/CATEGORY/PACKAGE_NAME/PACKAGE_VERSION
 prepend-path       LD_LIBRARY_PATH   $synopsys/lib
+prepend-path       C_INCLUDE_PATH    $synopsys/include
 prepend-path       PATH              $synopsys/bin
 prepend-path       MANPATH           $synopsys/share/man
 prepend-path       PKG_CONFIG_PATH   $synopsys/lib/pkgconfig
