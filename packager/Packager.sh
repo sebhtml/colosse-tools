@@ -25,6 +25,12 @@ tarball=$Source0
 # Download the tarball
 distribution=$(basename $tarball)
 
+mock=$package-$version-$build-Sandbox
+
+rm -rf $mock
+mkdir $mock
+cd $mock
+
 if test -f $distribution
 then
 	echo "" &> /dev/null
@@ -33,7 +39,6 @@ else
 	wget $tarball -O $distribution
 fi
 
-rm -rf $package-$version
 
 # Uncompress
 if test $(echo $distribution|grep .tar.bz2$|wc -l) -eq 1
@@ -47,7 +52,7 @@ then
 	unzip $distribution
 fi
 
-cd $package-$version
+cd $(ls|grep -v $distribution)
 
 packageName=$package
 packageVersion=$version-$build
@@ -120,4 +125,5 @@ sed -i "$expression" $moduleFile
 # Fix permissions
 chgrp clumeq -R $prefix
 chmod g+w -R $prefix
+chgrp clumeq -R $moduleFile
 
