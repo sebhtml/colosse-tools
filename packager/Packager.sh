@@ -7,7 +7,7 @@ template=$programDirectory/Module.txt
 
 source $1
 
-if test $BuildRequires != ""
+if test "$BuildRequires" != ""
 then
 	module load $BuildRequires
 fi
@@ -27,10 +27,6 @@ distribution=$(basename $tarball)
 
 mock=$package-$version-$build-Sandbox
 
-rm -rf $mock
-mkdir $mock
-cd $mock
-
 if test -f $distribution
 then
 	echo "" &> /dev/null
@@ -39,6 +35,11 @@ else
 	wget $tarball -O $distribution
 fi
 
+rm -rf $mock
+mkdir $mock
+cd $mock
+
+ln -s ../$distribution
 
 # Uncompress
 if test $(echo $distribution|grep .tar.bz2$|wc -l) -eq 1
@@ -62,15 +63,15 @@ prefix=/software/$category/$packageName/$packageVersion
 # Configure the source
 echo "prefix= $prefix"
 
-if test -f configure
+if test -f bootstrap.sh
+then
+	./bootstrap.sh --prefix=$prefix
+	./b2 install
+elif test -f configure
 then
 	./configure --prefix=$prefix $configureFlags
-fi
-
-# Make it
-if test -f Makefile
-then
 	make -j 4
+	make install
 elif test -f CMakeLists.txt
 then
 	mkdir self-build
@@ -78,17 +79,13 @@ then
 	cmake ..
 	make -j 4
 	cd ..
-fi
 
-# Install it
-if test -f configure
-then
-	make install
-elif test -f CMakeLists.txt
-then
 	mkdir -p $prefix
 	cp -rP bin lib include $prefix
-else
+elif test -f Makefile
+then
+	make -j 4
+
 	mkdir -p $prefix
 	mkdir $prefix/{bin,lib,share}
 	mkdir -p $prefix/share/man/man1
