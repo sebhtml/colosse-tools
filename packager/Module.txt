@@ -1,0 +1,25 @@
+#%Module1.0
+
+proc ModulesHelp { } {
+	    puts stderr "\tAdds PACKAGE_NAME/PACKAGE_VERSION to your environment  "
+}
+
+module-whatis "(Category_______) CATEGORY "
+module-whatis "(Name___________) "
+module-whatis "(Version________) "
+module-whatis "(Description_Fr_) "
+module-whatis "(Description_En_) "
+module-whatis "(Website________) "
+module-whatis "(Authorship_____) "
+module-whatis "(Compiler_______)"
+module-whatis "(Flags__________)"
+module-whatis "(Dependencies___)"
+module-whatis "(Notes_Fr_______)"
+module-whatis "(Notes_En_______)"
+
+set                synopsys          /software/CATEGORY/PACKAGE_NAME/PACKAGE_VERSION
+prepend-path       LD_LIBRARY_PATH   $synopsys/lib
+prepend-path       PATH              $synopsys/bin
+prepend-path       MANPATH           $synopsys/share/man
+prepend-path       PKG_CONFIG_PATH   $synopsys/lib/pkgconfig
+prepend-path       PKG_CONFIG_PATH   $synopsys/share/pkgconfig

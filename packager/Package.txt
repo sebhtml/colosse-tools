@@ -1,0 +1,6 @@
+category=apps
+package=bwa
+version=0.7.3a
+build=1
+tarball=http://sourceforge.net/projects/bio-bwa/files/bwa-0.7.3a.tar.bz2
+
