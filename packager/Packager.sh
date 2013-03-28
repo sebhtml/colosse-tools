@@ -55,6 +55,11 @@ fi
 
 cd $(ls|grep -v $distribution)
 
+for i in $Patch0
+do
+	patch -p1 < ../../$i
+done
+
 packageName=$package
 packageVersion=$version-$build
 
