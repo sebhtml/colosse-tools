@@ -64,7 +64,7 @@ echo "prefix= $prefix"
 
 if test -f configure
 then
-	./configure --prefix=$prefix
+	./configure --prefix=$prefix $configureFlags
 fi
 
 # Make it

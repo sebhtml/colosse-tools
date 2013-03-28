@@ -6,3 +6,5 @@ Source0=http://sourceforge.net/projects/bio-bwa/files/bwa-0.7.3a.tar.bz2
 BuildRequires=""
 Requires=""
 
+configureFlags=""
+
