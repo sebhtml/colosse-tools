@@ -42,6 +42,9 @@ then
 elif test $(echo $distribution|grep .tar.gz$|wc -l) -eq 1
 then
 	tar -xzf $distribution
+elif test $(echo $distribution|grep .zip$|wc -l) -eq 1
+then
+	unzip $distribution
 fi
 
 cd $package-$version
