@@ -2,9 +2,25 @@
 # Sébastien Boisvert
 # automated installer
 
+programDirectory=$(dirname $BASH_SOURCE)
+template=$programDirectory/Module.txt
+
 source $1
 
+if test $BuildRequires != ""
+then
+	module load $BuildRequires
+fi
+
+
+
 ###################
+
+version=$Version
+package=$Name
+build=$Release
+category=$Group
+tarball=$Source0
 
 # Download the tarball
 distribution=$(basename $tarball)
@@ -60,6 +76,10 @@ fi
 if test -f configure
 then
 	make install
+elif test -f CMakeLists.txt
+then
+	mkdir -p $prefix
+	cp -rP bin lib include $prefix
 else
 	mkdir -p $prefix
 	mkdir $prefix/{bin,lib,share}
@@ -81,10 +101,12 @@ fi
 # Create the module file
 mkdir -p ~/modulefiles/$category/$packageName
 
-template=$(dirname $BASH_SOURCE)/Module.txt
 moduleFile=~/modulefiles/$category/$packageName/$packageVersion
 
 cp $template $moduleFile
+
+expression="s/REQUIRES/$Requires/g"
+sed -i "$expression" $moduleFile
 expression="s/CATEGORY/$category/g"
 sed -i "$expression" $moduleFile
 expression="s/PACKAGE_NAME/$packageName/g"

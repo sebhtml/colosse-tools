@@ -17,6 +17,8 @@ module-whatis "(Dependencies___)"
 module-whatis "(Notes_Fr_______)"
 module-whatis "(Notes_En_______)"
 
+REQUIRES
+
 set                synopsys          /software/CATEGORY/PACKAGE_NAME/PACKAGE_VERSION
 prepend-path       LD_LIBRARY_PATH   $synopsys/lib
 prepend-path       PATH              $synopsys/bin
