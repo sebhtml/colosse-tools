@@ -47,6 +47,12 @@ then
 elif test $(echo $distribution|grep .zip$|wc -l) -eq 1
 then
 	unzip $distribution
+elif test $(echo $distribution|grep .tar.xz|wc -l) -eq 1
+then
+	cat $distribution | xzcat | tar -x
+elif test $(echo $distribution|grep .tar.lz|wc -l) -eq 1
+then
+	cat $distribution | lzcat | tar -x
 fi
 
 cd $(ls|grep -v $distribution)
@@ -60,6 +66,20 @@ prefix=$Root/$Group/$Name/$Version-$Release
 
 # Configure the source
 echo "prefix= $prefix"
+
+# create the configure script if it does not exist
+
+if test -f configure
+then
+	echo "" &> /dev/null
+else
+	if test -f configure.ac
+	then
+		autoreconf -isf
+	fi
+fi
+
+# proceed with the build method
 
 if test -f bootstrap.sh
 then
