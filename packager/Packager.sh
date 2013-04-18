@@ -85,6 +85,13 @@ if test -f bootstrap.sh
 then
 	./bootstrap.sh --prefix=$prefix
 	./b2 install
+
+# this is specific to metis
+elif test -d libmetis || test -d libparmetis
+then
+	make config prefix=$prefix
+	make
+	make install
 elif test -f configure
 then
 	./configure --prefix=$prefix $configureFlags
