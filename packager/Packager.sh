@@ -7,6 +7,8 @@ template=$programDirectory/Module.txt
 
 source $1
 
+module use $ModulePath
+
 if test "$BuildRequires" != ""
 then
 	module load $BuildRequires
@@ -39,6 +41,9 @@ then
 elif test $(echo $distribution|grep .tar.gz$|wc -l) -eq 1
 then
 	tar -xzf $distribution
+elif test $(echo $distribution|grep .tgz$|wc -l) -eq 1
+then
+	tar -xzf $distribution
 elif test $(echo $distribution|grep .zip$|wc -l) -eq 1
 then
 	unzip $distribution
@@ -51,7 +56,7 @@ do
 	patch -p1 < ../../$i
 done
 
-prefix=/software/$Group/$Name/$Version-$Release
+prefix=$Root/$Group/$Name/$Version-$Release
 
 # Configure the source
 echo "prefix= $prefix"
@@ -75,8 +80,12 @@ then
 
 	mkdir -p $prefix
 	cp -rP bin lib include $prefix
-elif test -f Makefile
-then
+else
+	if ! test -f Makefile
+	then
+		cd src
+	fi
+
 	make -j 4
 
 	mkdir -p $prefix
@@ -97,13 +106,15 @@ then
 fi
 
 # Create the module file
-mkdir -p ~/modulefiles/$Group/$Name
+mkdir -p $ModulePath/$Group/$Name
 
-moduleFile=~/modulefiles/$Group/$Name/$Version-$Release
+moduleFile=$ModulePath/$Group/$Name/$Version-$Release
 
 cp $template $moduleFile
 
 expression="s%__Requires__%module load $Requires%g"
+sed -i "$expression" $moduleFile
+expression="s|__Root__|$Root|g"
 sed -i "$expression" $moduleFile
 expression="s/__Group__/$Group/g"
 sed -i "$expression" $moduleFile
@@ -113,7 +124,7 @@ expression="s/__Version__/$Version/g"
 sed -i "$expression" $moduleFile
 expression="s/__Release__/$Release/g"
 sed -i "$expression" $moduleFile
-expression="s/__Summary__/$Summary/g"
+expression="s!__Summary__!$Summary!g"
 sed -i "$expression" $moduleFile
 expression="s%__URL__%$URL%g"
 sed -i "$expression" $moduleFile

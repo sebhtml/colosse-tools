@@ -11,7 +11,7 @@ module-whatis "(Description_Fr_) "
 module-whatis "(Description_En_) __Summary__"
 module-whatis "(Website________) __URL__"
 module-whatis "(Authorship_____) "
-module-whatis "(Compiler_______)"
+module-whatis "(Compiler_______) "
 module-whatis "(Flags__________)"
 module-whatis "(Dependencies___)"
 module-whatis "(Notes_Fr_______)"
@@ -19,9 +19,10 @@ module-whatis "(Notes_En_______)"
 
 __Requires__
 
-set                synopsys          /software/__Group__/__Name__/__Version__-__Release__
+set                synopsys          __Root__/__Group__/__Name__/__Version__-__Release__
 prepend-path       LD_LIBRARY_PATH   $synopsys/lib
 prepend-path       C_INCLUDE_PATH    $synopsys/include
+prepend-path       CPLUS_INCLUDE_PATH    $synopsys/include
 prepend-path       PATH              $synopsys/bin
 prepend-path       MANPATH           $synopsys/share/man
 prepend-path       PKG_CONFIG_PATH   $synopsys/lib/pkgconfig

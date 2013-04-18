@@ -5,8 +5,10 @@ Release=1
 URL=http://joe.com
 Summary="This does that"
 Source0=http://sourceforge.net/projects/bio-bwa/files/bwa-0.7.3a.tar.bz2
+
 BuildRequires=""
 Requires=""
-
 configureFlags=""
 
+Root="/software"
+ModulePath="/clumeq/Modules/modulefiles/"
