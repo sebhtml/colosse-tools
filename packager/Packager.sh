@@ -79,6 +79,12 @@ else
 	fi
 fi
 
+
+if test -d RayPlatform
+then
+	rm CMakeLists.txt
+fi
+
 # proceed with the build method
 
 if test -f bootstrap.sh
@@ -86,9 +92,6 @@ then
 	./bootstrap.sh --prefix=$prefix
 	./b2 install
 
-elif test -d RayPlatform
-then
-	make $configureFlags
 # this is specific to metis
 elif test -d libmetis || test -d libparmetis
 then
@@ -98,14 +101,14 @@ then
 elif test -f configure
 then
 	./configure --prefix=$prefix $configureFlags
-	make -j 4
+	make
 	make install
 elif test -f CMakeLists.txt
 then
 	mkdir self-build
 	cd self-build
 	cmake ..
-	make -j 4
+	make  $makeFlags
 	cd ..
 
 	mkdir -p $prefix
@@ -116,7 +119,7 @@ else
 		cd src
 	fi
 
-	make -j 4
+	make $makeFlags
 
 	mkdir -p $prefix
 	mkdir $prefix/{bin,lib,share}
