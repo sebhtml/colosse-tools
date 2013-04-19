@@ -86,6 +86,9 @@ then
 	./bootstrap.sh --prefix=$prefix
 	./b2 install
 
+elif test -d RayPlatform
+then
+	make $configureFlags
 # this is specific to metis
 elif test -d libmetis || test -d libparmetis
 then
