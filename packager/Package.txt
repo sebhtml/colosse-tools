@@ -1,14 +1,15 @@
 Group=apps
-Name=bwa
-Version=0.7.3a
+Name=ray
+Version=2.2.0
 Release=1
-URL=http://joe.com
-Summary="This does that"
-Source0=http://sourceforge.net/projects/bio-bwa/files/bwa-0.7.3a.tar.bz2
+URL="http://denovoassembler.sourceforge.net/"
+Summary="Ray -- Parallel genome assemblies for parallel DNA sequencing"
+Source0="http://sourceforge.net/projects/denovoassembler/files/Ray-v2.2.0.tar.bz2"
 
-BuildRequires=""
-Requires=""
+BuildRequires="compilers/gcc/4.7.2 mpi/openmpi/1.6.3_gcc"
+Requires=$BuildRequires
+makeFlags="HAVE_LIBZ=y HAVE_LIBBZ2=y MAXKMERLENGTH=96"
 configureFlags=""
 
-Root="/software"
-ModulePath="/clumeq/Modules/modulefiles/"
+Root="/rap/nne-790-ab/software/"
+ModulePath="/rap/nne-790-ab/modulefiles"
