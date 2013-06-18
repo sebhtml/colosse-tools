@@ -2,7 +2,7 @@
 # encoding: UTF-8
 # Author: Sébastien Boisvert
 # BUGS:
-# * This will not work if paths contain < or >
+# * This will not work if paths contain < or >  [FIXED]
 
 import sys
 import os
@@ -16,7 +16,7 @@ def getXMLContent(paths):
 	pipeArguments = []
 	pipeArguments.append("stat")
 	pipeArguments.append("-c")
-	pipeArguments.append("<entry>\n<path>%n</path>\n<user>%U</user>\n<group>%G</group>\n<type>%F</type>\n<size>%s</size>\n<mount>%m</mount>\n<inode>%i</inode\n</entry>")
+	pipeArguments.append("<entry>\n<path>%n</path>\n<user>%U</user>\n<group>%G</group>\n<type>%F</type>\n<size>%s</size>\n<mount>%m</mount>\n<inode>%i</inode>\n</entry>")
 	i = 0
 	while i < len(paths):
 		pipeArguments.append(paths[i])
@@ -25,7 +25,18 @@ def getXMLContent(paths):
 	process = Popen(pipeArguments, stdout=PIPE, stderr=PIPE)
 	stdout, stderr = process.communicate()
 
-	return stdout
+	content = stdout
+
+	i = 0
+	while i < len(paths):
+		path = paths[i]
+		newPath = path.replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
+
+		if newPath != path:
+			content = content.replace(path, newPath)
+		i += 1
+
+	return content
 
 arguments = sys.argv
 
