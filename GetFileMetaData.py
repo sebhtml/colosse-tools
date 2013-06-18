@@ -43,7 +43,7 @@ f.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + "\n")
 f.write("<report>\n")
 f.write("<directory>" + directory + "</directory>\n")
 
-toProcess = 4096
+toProcess = 128
 elements = []
 
 for line in open(fileWithPaths):
