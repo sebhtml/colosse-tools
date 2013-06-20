@@ -8,7 +8,12 @@ from elementtree.ElementTree import parse
 #from BeautifulSoup import BeautifulSoup as Soup
 import sys
 
+# \see http://stackoverflow.com/questions/14207708/ioerror-errno-32-broken-pipe-python
+from signal import signal, SIGPIPE, SIG_DFL
+signal(SIGPIPE,SIG_DFL) 
+
 arguments=sys.argv
+
 
 """
 <entry>
@@ -23,7 +28,12 @@ arguments=sys.argv
 
 """
 
-fileName = arguments[1]
+if len(arguments) != 3:
+	print("Usage: YieldInsight.py -size|-inode data.xml")
+	sys.exit()
+
+mode = arguments[1]
+fileName = arguments[2]
 
 class Entry:
 	def __init__(self, path, user, group, type, size, mount, inode):
@@ -34,8 +44,14 @@ class Entry:
 		self.size = size
 		self.mount = mount
 		self.inode = inode
-		self.recursiveSize = 0
-		self.recursiveInodes = 0
+		self.recursiveSize = size
+		self.recursiveInodes = 1
+
+	def getRecursiveSize(self):
+		return self.recursiveSize
+
+	def getRecursiveInodes(self):
+		return self.recursiveInodes
 
 	def getSize(self):
 		return self.size
@@ -74,7 +90,9 @@ for entry in element.findall("entry"):
 
 	keys[path] = entry
 
-for entry in keys.values():
+entries = keys.values()
+
+for entry in entries:
 	path = entry.getPath()
 
 	elements = path.split("/")
@@ -98,3 +116,21 @@ for entry in keys.values():
 
 
 # dump
+
+if mode == "-size":
+	sortedEntries = sorted(entries, key = lambda entry: entry.recursiveSize, reverse = True)
+
+	i = 0
+	while i < len(sortedEntries):
+		entry = sortedEntries[i]
+		print(entry.getPath() + " " + str(entry.getRecursiveSize()))
+		i += 1
+
+if mode == "-inode":
+	sortedEntries = sorted(entries, key = lambda entry: entry.recursiveInodes, reverse = True)
+
+	i = 0
+	while i < len(sortedEntries):
+		entry = sortedEntries[i]
+		print(entry.getPath() + " " + str(entry.getRecursiveInodes()))
+		i += 1

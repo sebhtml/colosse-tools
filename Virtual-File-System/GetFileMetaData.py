@@ -46,7 +46,7 @@ if len(arguments) != 2:
 
 fileWithPaths = arguments[1]
 
-directory = os.path.realpath(__file__)
+directory = os.getcwd()
 
 f = open(fileWithPaths+".xml", "w")
 
