@@ -38,16 +38,28 @@ fileName = arguments[1]
 class Entry:
 	def __init__(self):
 		self.name = None
+		self.path = ""
+		self.user = ""
+		self.group = ""
+		self.size = 0
 	
 	def setName(self, name):
 		self.name = name
 
+	def setPath(self, path):
+		self.path = path
+
 	def setUser(self, user):
 		self.user = user
+
+	def getUser(self):
+		return self.user
 
 	def setGroup(self, group):
 		self.group = group
 
+	def getGroup(self):
+		return self.group
 	def setType(self, type):
 		self.type = type
 
@@ -55,6 +67,7 @@ class Entry:
 			self.children = {}
 			self.recursiveSize = 0
 			self.recursiveInodes = 0
+			self.size = 0
 
 	def getType(self):
 		return self.type
@@ -97,7 +110,7 @@ class Entry:
 		self.children[name] = entry
 
 	def getPath(self):
-		return self.name
+		return self.path
 
 	def hasChild(self, name):
 		if name in self.children:
@@ -108,6 +121,30 @@ class Entry:
 		if not self.hasChild(name):
 			return None
 		return self.children[name]
+
+	def compute(self):
+		if self.isDirectory():
+			children = self.children.values()
+			for child in children:
+				child.compute()
+				self.recursiveSize += child.getRecursiveSize()
+				self.recursiveInodes += child.getRecursiveInodes()
+
+class Report:
+	def __init__(self, fileName, name):
+		self.fileName = fileName
+		self.name = name
+
+		self.file = open(self.fileName + "-" + name + ".xml", "w")
+		self.file.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
+		self.file.write("\n<objects>\n")
+
+	def close(self):
+		self.file.write("</objects>")
+		self.file.close()
+
+	def append(self, name, score):
+		self.file.write("<object><handle>" + name + "</handle><score>" + str(score) + "</score></object>\n")
 
 #tree = parse(fileName)
 #element = tree.getroot()
@@ -207,6 +244,7 @@ class ReportGenerator:
 					entry.setSize(size)
 					entry.setMount(mount)
 					entry.setInode(inode)
+					entry.setPath(path)
 
 				currentNode.bindChild(directory, entry)
 
@@ -247,42 +285,153 @@ class ReportGenerator:
 		print("Parsing file")
 		parser.ParseFile(file)
 
+		print("Generating recursive counts")
+
+		self.root.compute()
+
 	def generateReport(self):
 		# dump
 
 		print("Generating reports")
-
 		entries = self.entries
 
-		sizeReport = open(self.fileName + "-bySize.txt")
-		sortedEntries = sorted(entries, key = lambda entry: entry.recursiveSize, reverse = True)
+		report = Report(self.fileName, "byBytes")
 
+		sortedEntries = sorted(entries, key = lambda entry: entry.size, reverse = True)
 		i = 0
 		while i < len(sortedEntries):
 			entry = sortedEntries[i]
-			sizeReport.write(entry.getPath() + " " + str(entry.getRecursiveSize()))
-			sizeReport.write("\n")
+			report.append(entry.getPath(), entry.getSize())
 			i += 1
 
-		sizeReport.close()
+		report.close()
 
-		inodeReport = open(self.fileName + "-byInode.txt")
+		report = Report(self.fileName, "byRecursiveBytes")
+
+		sortedEntries = sorted(entries, key = lambda entry: entry.recursiveSize, reverse = True)
+		i = 0
+		while i < len(sortedEntries):
+			entry = sortedEntries[i]
+			report.append(entry.getPath(), entry.getRecursiveSize())
+			i += 1
+
+		report.close()
+
+		report = Report(self.fileName, "byRecursiveInodes")
+
 		sortedEntries = sorted(entries, key = lambda entry: entry.recursiveInodes, reverse = True)
 
 		i = 0
 		while i < len(sortedEntries):
 			entry = sortedEntries[i]
-			inodeReport.write(entry.getPath() + " " + str(entry.getRecursiveInodes()))
-			inodeReport.write("\n")
+			report.append(entry.getPath(), entry.getRecursiveInodes())
 			i += 1
 
-		inodeReport.close()
+		report.close()
+
+		report = Report(self.fileName, "byUserInodes")
+
+		users = {}
+		for entry in entries:
+			user = entry.getUser()
+			if user not in users:
+				users[user] = 0
+
+			users[user] += 1
+
+		theEntries = []
+		for key in users.keys():
+			theEntries.append([key, users[key]])
+
+		sortedEntries = sorted(theEntries, key = lambda entry: entry[1], reverse = True)
+
+		i = 0
+		while i < len(sortedEntries):
+			entry = sortedEntries[i]
+			report.append(entry[0], entry[1])
+			i += 1
+
+		report.close()
+
+		report = Report(self.fileName, "byUserBytes")
+
+		users = {}
+		for entry in entries:
+			user = entry.getUser()
+			if user not in users:
+				users[user] = 0
+
+			users[user] += entry.getSize()
+
+		theEntries = []
+		for key in users.keys():
+			theEntries.append([key, users[key]])
+
+		sortedEntries = sorted(theEntries, key = lambda entry: entry[1], reverse = True)
+
+		i = 0
+		while i < len(sortedEntries):
+			entry = sortedEntries[i]
+			report.append(entry[0], entry[1])
+			i += 1
+
+		report.close()
+
+
+		report = Report(self.fileName, "byGroupBytes")
+
+		users = {}
+		for entry in entries:
+			user = entry.getGroup()
+			if user not in users:
+				users[user] = 0
+
+			users[user] += entry.getSize()
+
+		theEntries = []
+		for key in users.keys():
+			theEntries.append([key, users[key]])
+
+		sortedEntries = sorted(theEntries, key = lambda entry: entry[1], reverse = True)
+
+		i = 0
+		while i < len(sortedEntries):
+			entry = sortedEntries[i]
+			report.append(entry[0], entry[1])
+			i += 1
+
+		report.close()
+
+		report = Report(self.fileName, "byGroupInodes")
+
+		users = {}
+		for entry in entries:
+			user = entry.getGroup()
+			if user not in users:
+				users[user] = 0
+
+			users[user] += 1
+
+		theEntries = []
+		for key in users.keys():
+			theEntries.append([key, users[key]])
+
+		sortedEntries = sorted(theEntries, key = lambda entry: entry[1], reverse = True)
+
+		i = 0
+		while i < len(sortedEntries):
+			entry = sortedEntries[i]
+			report.append(entry[0], entry[1])
+			i += 1
+
+		report.close()
+
 
 
 reportGenerator = ReportGenerator(fileName)
 globalGenerator = reportGenerator
 reportGenerator.enableVerbosity()
-reportGenerator.enableDryRunMode()
+#reportGenerator.enableDryRunMode()
 
 reportGenerator.load()
 reportGenerator.generateReport()
