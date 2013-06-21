@@ -3,8 +3,9 @@
 # Bugs: does not work in Windows because the separator is not '/'
 # author: Sébastien Boisvert
 
-from elementtree.ElementTree import Element
-from elementtree.ElementTree import parse
+#from elementtree.ElementTree import Element
+#from elementtree.ElementTree import parse
+import xml.parsers.expat
 #from BeautifulSoup import BeautifulSoup as Soup
 import sys
 
@@ -35,34 +36,80 @@ if len(arguments) != 3:
 mode = arguments[1]
 fileName = arguments[2]
 
+
 class Entry:
-	def __init__(self, path, user, group, type, size, mount, inode):
-		self.path = path
+	def __init__(self):
+		self.name = None
+	
+	def setName(self, name):
+		self.name = name
+
+	def setUser(self, user):
 		self.user = user
+
+	def setGroup(self, group):
 		self.group = group
+
+	def setType(self, type):
 		self.type = type
+
+		if self.type == "directory":
+			self.children = {}
+			self.recursiveSize = 0
+			self.recursiveInodes = 0
+
+	def getType(self):
+		return self.type
+
+	def isDirectory(self):
+		return self.type == "directory"
+
+	def setSize(self, size):
 		self.size = size
-		self.mount = mount
-		self.inode = inode
-		self.recursiveSize = size
-		self.recursiveInodes = 1
+
+		#if self.isDirectory():
+			#self.recursiveInodes += 1
+			#self.recursiveSize += size
+
+	def setMount(self, mount):
+		#self.mount = mount
+		a = 1
+
+	def setInode(self, inode):
+		#self.inode = inode
+		a = 1
 
 	def getRecursiveSize(self):
-		return self.recursiveSize
+		if self.isDirectory():
+			return self.recursiveSize
+		return self.size
 
 	def getRecursiveInodes(self):
-		return self.recursiveInodes
+		if self.isDirectory():
+			return self.recursiveInodes
+		return 1
 
 	def getSize(self):
 		return self.size
 
-	def addChild(self, entry):
-		size = entry.getSize()
-		self.recursiveSize += size
-		self.recursiveInodes += 1
+	def bindChild(self, name, entry):
+		#print("type 1 --> " + self.getType() + " " + "type 2 --> " + self.getType())
+		#self.recursiveSize += entry.getSize()
+		#self.recursiveInodes += 1
+		self.children[name] = entry
 
 	def getPath(self):
-		return self.path
+		return self.name
+
+	def hasChild(self, name):
+		if name in self.children:
+			return True
+		return False
+
+	def getChild(self, name):
+		if not self.hasChild(name):
+			return None
+		return self.children[name]
 
 #tree = parse(fileName)
 #element = tree.getroot()
@@ -72,65 +119,150 @@ class Entry:
 
 #for entry in soup.findAll("entry"):
 
-tree = parse(fileName)
-element = tree.getroot()
 
-keys ={}
+#tree = parse(fileName)
+#element = tree.getroot()
 
-for entry in element.findall("entry"):
-	path = entry.find("path").text
-	user = entry.find("user").text
-	group = entry.find("group").text
-	type = entry.find("type").text
-	size = int(entry.find("size").text)
-	mount = entry.find("mount").text
-	inode = int(entry.find("inode").text)
+globalGenerator = None
 
-	entry = Entry(path, user, group, type, size, mount, inode)
+# \see http://docs.python.org/release/2.6.6/library/pyexpat.html
+# 3 handler functions
+def startElementHandler(name, attributes):
+	globalGenerator.startElement(name, attributes)
 
-	keys[path] = entry
+def endElementHandler(name):
+	globalGenerator.endElement(name)
 
-entries = keys.values()
-
-for entry in entries:
-	path = entry.getPath()
-
-	elements = path.split("/")
-
-	i = 0
-
-	parentKey = ""
-
-	while i < len(elements)-1:
-		token = elements[i]
-
-		if parentKey != "":
-			parentKey += "/"
-
-		parentKey += token
-
-		if parentKey in keys:
-			keys[parentKey].addChild(entry)
-
-		i += 1
+def processDataHandler(data):
+	globalGenerator.processData(data)
 
 
-# dump
+class ReportGenerator:
+	def __init__(self, mode, fileName):
+		self.mode = mode
+		self.fileName = fileName
+		self.verbose = False
 
-if mode == "-size":
-	sortedEntries = sorted(entries, key = lambda entry: entry.recursiveSize, reverse = True)
+	def enableVerbosity(self):
+		self.verbose = True
 
-	i = 0
-	while i < len(sortedEntries):
-		entry = sortedEntries[i]
-		print(entry.getPath() + " " + str(entry.getRecursiveSize()))
-		i += 1
+	def startElement(self, name, attributes):
+		if name == "entry":
+			self.isInsideEntry = True
+			self.attributes = {}
 
-if mode == "-inode":
-	sortedEntries = sorted(entries, key = lambda entry: entry.recursiveInodes, reverse = True)
+		self.stack.append(name)
 
-	i = 0
-	while i < len(sortedEntries):
-		entry = sortedEntries[i]
-		print(entry.getPath() + " " + str(entry.getRecursiveInodes()))
-		i += 1
+	def endElement(self, name):
+		if name == "entry":
+			self.isInsideEntry = False
+			#print("Got node")
+			#print(self.attributes)
+
+			self.addEntry()
+
+		self.stack.pop()
+
+	def addEntry(self):
+		path = self.attributes["path"]
+		user = self.attributes["user"]
+		group = self.attributes["group"]
+		type = self.attributes["type"]
+		size = int(self.attributes["size"])
+		mount = self.attributes["mount"]
+		inode = int(self.attributes["inode"])
+
+		# inqsert the node in the file system
+		directories = path.split("/")
+
+		currentNode = self.root
+
+		iterator = 0
+
+		while iterator < len(directories):
+			directory = directories[iterator]
+
+			if not currentNode.hasChild(directory):
+				entry = Entry()
+				entry.setName(directory)
+				entry.setType("directory")
+				self.entries.append(entry)
+
+				if iterator == len(directories) - 1:
+					entry.setUser(user)
+					entry.setGroup(group)
+					entry.setType(type)
+					entry.setSize(size)
+					entry.setMount(mount)
+					entry.setInode(inode)
+
+				currentNode.bindChild(directory, entry)
+
+			currentNode = currentNode.getChild(directory)
+			iterator += 1
+
+		if self.verbose:
+			loaded = len(self.entries)
+			if loaded % 10000 == 0:
+				print("Loaded " + str(loaded) + " from " + self.fileName)
+
+	def processData(self, data):
+		if self.isInsideEntry:
+
+			currentElement = self.stack.pop()
+			self.stack.append(currentElement)
+
+			if currentElement not in self.attributes:
+				self.attributes[currentElement] = ""
+
+			self.attributes[currentElement] += data
+
+	def load(self):
+
+		root = Entry()
+		root.setName("root")
+		root.setType("directory")
+		self.root = root
+		self.entries = []
+
+		parser = xml.parsers.expat.ParserCreate()
+		parser.StartElementHandler = startElementHandler
+		parser.EndElementHandler = endElementHandler
+		parser.CharacterDataHandler = processDataHandler
+
+		file = open(self.fileName)
+
+		self.isInsideEntry = False
+		self.stack = []
+
+		parser.ParseFile(file)
+
+	def generateReport(self):
+		# dump
+
+		entries = self.entries
+
+		if mode == "-size":
+			sortedEntries = sorted(entries, key = lambda entry: entry.recursiveSize, reverse = True)
+
+			i = 0
+			while i < len(sortedEntries):
+				entry = sortedEntries[i]
+				print(entry.getPath() + " " + str(entry.getRecursiveSize()))
+				i += 1
+
+		if mode == "-inode":
+			sortedEntries = sorted(entries, key = lambda entry: entry.recursiveInodes, reverse = True)
+
+			i = 0
+			while i < len(sortedEntries):
+				entry = sortedEntries[i]
+				print(entry.getPath() + " " + str(entry.getRecursiveInodes()))
+				i += 1
+
+reportGenerator = ReportGenerator(mode, fileName)
+globalGenerator = reportGenerator
+reportGenerator.enableVerbosity()
+reportGenerator.load()
+reportGenerator.generateReport()
+
