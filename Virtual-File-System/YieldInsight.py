@@ -9,6 +9,13 @@ import xml.parsers.expat
 #from BeautifulSoup import BeautifulSoup as Soup
 import sys
 
+# \see http://stackoverflow.com/questions/6327494/what-is-the-following-unicode-string-xe9
+import sys
+import codecs
+#reload(sys)
+#sys.setdefaultencoding("utf-8")
+
+
 # \see http://stackoverflow.com/questions/14207708/ioerror-errno-32-broken-pipe-python
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE,SIG_DFL) 
@@ -135,7 +142,7 @@ class Report:
 		self.fileName = fileName
 		self.name = name
 
-		self.file = open(self.fileName + "-" + name + ".xml", "w")
+		self.file = codecs.open(self.fileName + "-" + name + ".xml", "w", "utf-8")
 		self.file.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
 		self.file.write("\n<objects>\n")
 
@@ -143,7 +150,9 @@ class Report:
 		self.file.write("</objects>")
 		self.file.close()
 
+	# \see http://stackoverflow.com/questions/10993612/python-removing-xa0-from-string
 	def append(self, name, score):
+		#self.file.write("<object><handle>" + name.replace(u'\xa0', u' ') + "</handle><score>" + str(score) + "</score></object>\n")
 		self.file.write("<object><handle>" + name + "</handle><score>" + str(score) + "</score></object>\n")
 
 #tree = parse(fileName)
@@ -277,7 +286,8 @@ class ReportGenerator:
 		parser.EndElementHandler = endElementHandler
 		parser.CharacterDataHandler = processDataHandler
 
-		file = open(self.fileName)
+		#file = codecs.open(self.fileName, "r", "utf-8")
+		file = open(self.fileName, "r")
 
 		self.isInsideEntry = False
 		self.stack = []
