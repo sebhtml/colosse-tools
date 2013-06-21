@@ -29,13 +29,11 @@ arguments=sys.argv
 
 """
 
-if len(arguments) != 3:
-	print("Usage: YieldInsight.py -size|-inode data.xml")
+if len(arguments) != 2:
+	print("Usage: YieldInsight.py data.xml")
 	sys.exit()
 
-mode = arguments[1]
-fileName = arguments[2]
-
+fileName = arguments[1]
 
 class Entry:
 	def __init__(self):
@@ -138,10 +136,13 @@ def processDataHandler(data):
 
 
 class ReportGenerator:
-	def __init__(self, mode, fileName):
-		self.mode = mode
+	def __init__(self, fileName):
 		self.fileName = fileName
 		self.verbose = False
+		self.dryRun = False
+
+	def enableDryRunMode(self):
+		self.dryRun = True
 
 	def enableVerbosity(self):
 		self.verbose = True
@@ -161,9 +162,20 @@ class ReportGenerator:
 
 			self.addEntry()
 
+			if self.verbose:
+				if self.loaded % 10000 == 0:
+					print("Loaded " + str(self.loaded) + " from " + self.fileName)
+
+			self.loaded += 1
+
+
 		self.stack.pop()
 
 	def addEntry(self):
+
+		if self.dryRun:
+			return
+
 		path = self.attributes["path"]
 		user = self.attributes["user"]
 		group = self.attributes["group"]
@@ -201,10 +213,6 @@ class ReportGenerator:
 			currentNode = currentNode.getChild(directory)
 			iterator += 1
 
-		if self.verbose:
-			loaded = len(self.entries)
-			if loaded % 10000 == 0:
-				print("Loaded " + str(loaded) + " from " + self.fileName)
 
 	def processData(self, data):
 		if self.isInsideEntry:
@@ -224,6 +232,7 @@ class ReportGenerator:
 		root.setType("directory")
 		self.root = root
 		self.entries = []
+		self.loaded = 0
 
 		parser = xml.parsers.expat.ParserCreate()
 		parser.StartElementHandler = startElementHandler
@@ -235,34 +244,46 @@ class ReportGenerator:
 		self.isInsideEntry = False
 		self.stack = []
 
+		print("Parsing file")
 		parser.ParseFile(file)
 
 	def generateReport(self):
 		# dump
 
+		print("Generating reports")
+
 		entries = self.entries
 
-		if mode == "-size":
-			sortedEntries = sorted(entries, key = lambda entry: entry.recursiveSize, reverse = True)
+		sizeReport = open(self.fileName + "-bySize.txt")
+		sortedEntries = sorted(entries, key = lambda entry: entry.recursiveSize, reverse = True)
 
-			i = 0
-			while i < len(sortedEntries):
-				entry = sortedEntries[i]
-				print(entry.getPath() + " " + str(entry.getRecursiveSize()))
-				i += 1
+		i = 0
+		while i < len(sortedEntries):
+			entry = sortedEntries[i]
+			sizeReport.write(entry.getPath() + " " + str(entry.getRecursiveSize()))
+			sizeReport.write("\n")
+			i += 1
 
-		if mode == "-inode":
-			sortedEntries = sorted(entries, key = lambda entry: entry.recursiveInodes, reverse = True)
+		sizeReport.close()
 
-			i = 0
-			while i < len(sortedEntries):
-				entry = sortedEntries[i]
-				print(entry.getPath() + " " + str(entry.getRecursiveInodes()))
-				i += 1
+		inodeReport = open(self.fileName + "-byInode.txt")
+		sortedEntries = sorted(entries, key = lambda entry: entry.recursiveInodes, reverse = True)
 
-reportGenerator = ReportGenerator(mode, fileName)
+		i = 0
+		while i < len(sortedEntries):
+			entry = sortedEntries[i]
+			inodeReport.write(entry.getPath() + " " + str(entry.getRecursiveInodes()))
+			inodeReport.write("\n")
+			i += 1
+
+		inodeReport.close()
+
+
+reportGenerator = ReportGenerator(fileName)
 globalGenerator = reportGenerator
 reportGenerator.enableVerbosity()
+reportGenerator.enableDryRunMode()
+
 reportGenerator.load()
 reportGenerator.generateReport()
 
