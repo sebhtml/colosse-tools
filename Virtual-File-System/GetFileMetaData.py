@@ -13,6 +13,7 @@ from subprocess import Popen, PIPE
 # get XML content for a bunch of paths
 def getXMLContent(paths):
 
+	encoding = "utf8"
 	pipeArguments = []
 	pipeArguments.append("stat")
 	pipeArguments.append("-c")
@@ -27,10 +28,40 @@ def getXMLContent(paths):
 
 	content = stdout
 
+	# only use valid XML characters
 	i = 0
 	while i < len(paths):
 		path = paths[i]
 		newPath = path.replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
+		
+		pathIsValid = True
+
+		try:
+			unicode(newPath, encoding)
+		except:
+			pathIsValid = False
+
+		if not pathIsValid:
+			# find the invalid character and change it for a '?'
+			iterator = 0
+			numberOfCharacters = len(newPath)
+			theNewPath = ""
+			while iterator < numberOfCharacters:
+				character = newPath[iterator]
+				characterIsValid = True
+
+				try:
+					unicode(character, encoding)
+				except:
+					characterIsValid = False
+
+				if not characterIsValid:
+					character = '?'
+
+				theNewPath += character
+				iterator += 1
+				
+			newPath = theNewPath
 
 		if newPath != path:
 			content = content.replace(path, newPath)
