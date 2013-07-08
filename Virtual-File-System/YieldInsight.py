@@ -72,9 +72,11 @@ class Entry:
 
 		if self.type == "directory":
 			self.children = {}
+			self.size = 0
 			self.recursiveSize = 0
 			self.recursiveInodes = 0
-			self.size = 0
+			self.recursiveSizeByUser = {}
+			self.recursiveInodesByUser = {}
 
 	def getType(self):
 		return self.type
@@ -107,6 +109,33 @@ class Entry:
 			return self.recursiveInodes
 		return 1
 
+	def getRecursiveInodesForUser(self, user):
+		if self.isDirectory():
+			if user in self.recursiveInodesByUser:
+				return self.recursiveInodesByUser[user]
+			return 0
+
+		if self.user == user:
+			return self.getRecursiveInodes()
+
+		return 0
+
+	def getRecursiveSizeForUser(self, user):
+		if self.isDirectory():
+			if user in self.recursiveSizeByUser:
+				return self.recursiveSizeByUser[user]
+			return 0
+
+		if self.user == user:
+			return self.getRecursiveSize()
+
+		return 0
+
+	def getUsers(self):
+		if self.isDirectory():
+			return self.recursiveInodesByUser.keys()
+		return [self.user]
+
 	def getSize(self):
 		return self.size
 
@@ -134,8 +163,23 @@ class Entry:
 			children = self.children.values()
 			for child in children:
 				child.compute()
-				self.recursiveSize += child.getRecursiveSize()
-				self.recursiveInodes += child.getRecursiveInodes()
+
+				self.addData(child)
+
+	def addData(self, child):
+		self.recursiveSize += child.getRecursiveSize()
+		self.recursiveInodes += child.getRecursiveInodes()
+
+		users = child.getUsers()
+
+		for user in users:
+			if user not in self.recursiveSizeByUser:
+				self.recursiveSizeByUser[user] = 0
+			if user not in self.recursiveInodesByUser:
+				self.recursiveInodesByUser[user] = 0
+
+			self.recursiveSizeByUser[user] += child.getRecursiveSizeForUser(user)
+			self.recursiveInodesByUser[user] += child.getRecursiveInodesForUser(user)
 
 class Report:
 	def __init__(self, fileName, name):
@@ -146,14 +190,26 @@ class Report:
 		self.file.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
 		self.file.write("\n<objects>\n")
 
+		self.items = 0
+		self.maximum = 999999999
+		self.minimumScore = 1
+
 	def close(self):
 		self.file.write("</objects>")
 		self.file.close()
 
 	# \see http://stackoverflow.com/questions/10993612/python-removing-xa0-from-string
 	def append(self, name, score):
+		if self.items == self.maximum:
+			return
+
+		if score < self.minimumScore:
+			return
+
 		#self.file.write("<object><handle>" + name.replace(u'\xa0', u' ') + "</handle><score>" + str(score) + "</score></object>\n")
 		self.file.write("<object><handle>" + name + "</handle><score>" + str(score) + "</score></object>\n")
+
+		self.items += 1
 
 #tree = parse(fileName)
 #element = tree.getroot()
@@ -295,6 +351,7 @@ class ReportGenerator:
 		print("Parsing file")
 		parser.ParseFile(file)
 
+	def count(self):
 		print("Generating recursive counts")
 
 		self.root.compute()
@@ -303,6 +360,7 @@ class ReportGenerator:
 		# dump
 
 		print("Generating reports")
+
 		entries = self.entries
 
 		report = Report(self.fileName, "byBytes")
@@ -338,6 +396,38 @@ class ReportGenerator:
 			i += 1
 
 		report.close()
+
+		# per-user reports
+
+		users = self.root.getUsers()
+
+		for user in users:
+			report = Report(self.fileName, "byRecursiveBytes+user=" + user)
+
+			sortedEntries = sorted(entries, key = lambda entry: entry.getRecursiveSizeForUser(user), reverse = True)
+			i = 0
+			while i < len(sortedEntries):
+				entry = sortedEntries[i]
+				report.append(entry.getPath(), entry.getRecursiveSizeForUser(user))
+				i += 1
+
+			report.close()
+
+			report = Report(self.fileName, "byRecursiveInodes+user=" + user)
+
+			sortedEntries = sorted(entries, key = lambda entry: entry.getRecursiveInodesForUser(user), reverse = True)
+
+			i = 0
+			while i < len(sortedEntries):
+				entry = sortedEntries[i]
+				report.append(entry.getPath(), entry.getRecursiveInodesForUser(user))
+				i += 1
+
+			report.close()
+
+
+
+		# rest of reports
 
 		report = Report(self.fileName, "byUserInodes")
 
@@ -444,5 +534,6 @@ reportGenerator.enableVerbosity()
 #reportGenerator.enableDryRunMode()
 
 reportGenerator.load()
+reportGenerator.count()
 reportGenerator.generateReport()
 
