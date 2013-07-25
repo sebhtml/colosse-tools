@@ -21,6 +21,7 @@ __Requires__
 
 set                synopsys          __Root__/__Group__/__Name__/__Version__-__Release__
 prepend-path       LD_LIBRARY_PATH   $synopsys/lib
+prepend-path       LIBRARY_PATH   $synopsys/lib
 prepend-path       C_INCLUDE_PATH    $synopsys/include
 prepend-path       CPLUS_INCLUDE_PATH    $synopsys/include
 prepend-path       PATH              $synopsys/bin
